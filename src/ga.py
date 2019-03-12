@@ -9,6 +9,16 @@ from tqdm import tqdm
 
 
 class GA:
+    """
+    Basic GA implementation.
+
+    The model needs to implement the following interface:
+        - evaluate(env, max_eval): evaluate the model in the given environment.
+            returns total reward and evaluation used
+        - evolve(sigma): evolves the model. Sigma is calculated by the GA
+            (usually used as std in an additive Gaussian noise)
+
+    """
     def __init__(self, env, population, model_builder,
                  max_generations=20,
                  max_evals=1000,
@@ -53,6 +63,12 @@ class GA:
         self.rt_log = tqdm if graphical_output else SilentTqdm
 
     def optimize(self):
+        """
+        Runs a generation of the GA. The result is a tuple
+          (median_score, mean_score, max_score, evaluation_used, scored_parents)
+
+        :return: False if the optimization is ended, result otherwise
+        """
         if self.termination_strategy():
             if self.models is None:
                 self._log(f'{"Res" if self.g > 0 else "S"}tarting run')
@@ -68,15 +84,12 @@ class GA:
             self._log('end')
             return False
 
-    # @profile
     def _evolve_iter(self):
         scored_models = self._get_best_models(self.models, self.trials, 'Score Population')
         scores = [s for _, s in scored_models]
         median_score = np.median(scores)
         mean_score = np.mean(scores)
         max_score = scored_models[0][1]
-
-        # self.scored_parents = self.get_best_models([m for m, _ in scored_models[:self.truncation]])
 
         if self.elite_trials > 0:
             scored_parents = self._get_best_models([m for m, _ in scored_models[:self.truncation]], self.elite_trials, 'Score elite')
