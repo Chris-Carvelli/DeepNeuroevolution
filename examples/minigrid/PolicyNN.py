@@ -8,8 +8,8 @@ from torch.autograd import Variable
 
 class PolicyNN(nn.Module):
     def __init__(self, obs_space, action_space):
-        n = obs_space["image"][0]
-        m = obs_space["image"][1]
+        n = obs_space.spaces['image'].shape[0]
+        m = obs_space.spaces['image'].shape[1]
         self.image_embedding_size = ((n - 1) // 2 - 2) * ((m - 1) // 2 - 2) * 64
 
         super(PolicyNN, self).__init__()
@@ -61,6 +61,8 @@ class PolicyNN(nn.Module):
         tot_reward = 0
         n_eval = 0
         is_done = False
+
+        max_eval = max_eval or -1
 
         while not is_done:
             state = state['image']

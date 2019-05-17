@@ -15,8 +15,7 @@ def main():
             truncation=2,
             trials=1,
             elite_trials=0,
-            n_elites=1,
-            graphical_output=False
+            n_elites=1
             )
 
     res = True

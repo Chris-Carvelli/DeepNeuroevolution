@@ -4,9 +4,6 @@ import time
 
 import numpy as np
 
-from src.utils import SilentTqdm
-from tqdm import tqdm
-
 
 class GA:
     """
@@ -29,8 +26,7 @@ class GA:
                  truncation=10,
                  trials=1,
                  elite_trials=0,
-                 n_elites=1,
-                 graphical_output=False):
+                 n_elites=1):
 
         # hyperparams
         self.population = population
@@ -58,10 +54,6 @@ class GA:
         self.g = 0
         self.evaluations_used = 0
 
-        # utils
-        self.graphical_output = graphical_output
-        self.rt_log = tqdm if graphical_output else SilentTqdm
-
     def optimize(self):
         """
         Runs a generation of the GA. The result is a tuple
@@ -74,10 +66,9 @@ class GA:
                 self._log(f'{"Res" if self.g > 0 else "S"}tarting run')
                 self.models = self._init_models()
 
-            self._log(f'start gen {self.g}')
             ret = self._evolve_iter()
+            self._log(f"Gen {self.g}: median_score={ret[0]}, mean_score={ret[1]}, max_score={ret[2]}")
             self.g += 1
-            self._log(f"median_score={ret[0]}, mean_score={ret[1]}, max_score={ret[2]}")
 
             return ret
         else:
@@ -97,8 +88,6 @@ class GA:
             scored_parents = scored_models[:self.truncation]
 
         self._reproduce(scored_parents)
-
-        self._log(f'[gen {self.g}] reproduce')
 
         # just reassigning self.scored_parents doesn't reduce the refcount, laking memory
         # buffering in a local variable, cleaning after the deepcopy and the assign the new parents
@@ -131,20 +120,17 @@ class GA:
         # Elitism
         self.models = [p for p, _ in scored_parents[:self.n_elites]]
         sigma = max(self.min_sigma, self.sigma * pow(self.sigma_decay, self.g))
-        self._log(f'Reproduce with sigma {sigma}')
 
-        with self.rt_log(self.population - self.n_elites, desc=f'Reproduce[s={sigma}]') as bar:
-            for individual in range(self.population - self.n_elites):
-                random_choice = random.choice(scored_parents)
-                cpy = copy.deepcopy(random_choice)[0]
-                self.models.append(cpy)
-                self.models[-1].evolve(sigma)
-                bar.update()
+        for individual in range(self.population - self.n_elites):
+            random_choice = random.choice(scored_parents)
+            cpy = copy.deepcopy(random_choice)[0]
+            self.models.append(cpy)
+            self.models[-1].evolve(sigma)
 
     def _init_models(self):
         self._log('Init models')
         if not self.scored_parents:
-            return [self.model_builder() for _ in range(self.population)]
+            return [self.model_builder(self.env.observation_space, self.env.action_space) for _ in range(self.population)]
         else:
             self._reproduce(self.scored_parents)
             return self.models
@@ -153,16 +139,15 @@ class GA:
         ret = []
         # not pytonic but clear, check performance and memory footprint
         evaluation = 0
-        with self.rt_log(total=len(models) * trials, desc=queue_name) as bar:
-            for m in models:
-                m_scores = []
-                for _ in range(trials):
-                    m_scores.append(m.evaluate(self.env, self.max_episode_eval))
-                    evaluation += 1
-                    bar.update()
-                ret.append((m, m_scores))
 
-            return ret
+        for m in models:
+            m_scores = []
+            for _ in range(trials):
+                m_scores.append(m.evaluate(self.env, self.max_episode_eval))
+                evaluation += 1
+            ret.append((m, m_scores))
+
+        return ret
 
     # utils
     def _log(self, s):
@@ -171,8 +156,7 @@ class GA:
         with open('ga.log', 'a+') as f:
             f.write(f'[{t_str}] {s}\n')
 
-        if not self.graphical_output:
-            print(s)
+        print(s)
 
     # serialization
     def __getstate__(self):
