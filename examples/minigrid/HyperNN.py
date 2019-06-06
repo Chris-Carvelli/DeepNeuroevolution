@@ -2,7 +2,7 @@ from functools import reduce
 import torch
 import torch.nn as nn
 
-from PolicyNN import PolicyNN
+from examples.minigrid.PolicyNN import PolicyNN
 
 
 def random_z_v(z_dim, z_num):
