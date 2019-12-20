@@ -5,23 +5,25 @@ from examples.bipedal.Controller import PolicyNN
 
 
 def main():
+    env = gym.make('BipedalWalker-v2')
+    max_evals = 60000000000
     ga = GA(
-            env=gym.make('BipedalWalker-v2'),
-            population=10,
-            model_builder=lambda: PolicyNN(),
-            max_evals=6000000,
+            env_key=env,
+            population=200,
+            model_builder=lambda obs_space, action_space:  PolicyNN(obs_space, action_space),
+            max_evals=max_evals,
             max_generations=50,
-            sigma=0.1,
-            truncation=2,
-            trials=1,
-            elite_trials=0,
+            sigma=0.05,
+            min_sigma=0.005,
+            truncation=7,
+            trials=3,
+            elite_trials=5,
             n_elites=1
             )
 
     res = True
     while res is not False:
         res = ga.optimize()
-        print(res)
 
 
 if __name__ == "__main__":
