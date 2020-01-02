@@ -32,7 +32,8 @@ class HyperNN(nn.Module):
             nn.ReLU(),
             nn.Linear(128, self.out_features),
         )
-        self.z_v = random_z_v(self.z_dim, self.z_num)
+
+        self.register_buffer('z_v', random_z_v(self.z_dim, self.z_num))
         self.add_tensors = {}
 
         self._init_nn()
@@ -47,18 +48,6 @@ class HyperNN(nn.Module):
                 module_name = layer_index
             z_shard = self.z_indexer[module_name]
             return [self.hnn(x) for x in self.z_v[z_shard]]
-        # elif isinstance(layer_index, str):
-        #     z_shard = self.z_indexer[layer_index]
-        #     return [self.nn(x) for x in self.z_v[z_shard]]
-        # elif isinstance(layer_index, list):
-        #     return [self.nn(x) for x in layer_index]
-        # elif isinstance(layer_index, int):
-        #     if self._tiling is not None:
-        #         module_name = self.pnn_modules[layer_index]
-        #         z_shard = self.z_indexer[module_name]
-        #         return [self.nn(x) for x in self.z_v[z_shard]]
-        #     else:
-        #         return self.nn(self.z_v[layer_index])
 
     def evolve(self, sigma):
         coin_toss = random.random()
@@ -79,9 +68,10 @@ class HyperNN(nn.Module):
             # evolve weights
             params = self.named_parameters()
             for name, tensor in sorted(params):
-                to_add = self.add_tensors[tensor.size()]
-                to_add.normal_(0.0, sigma)
-                tensor.data.add_(to_add)
+                if 'z_v' not in name:
+                    to_add = self.add_tensors[tensor.size()]
+                    to_add.normal_(0.0, sigma)
+                    tensor.data.add_(to_add)
             self._update_pnn()
 
     def evaluate(self, env, max_eval, render=False, fps=60):
@@ -93,7 +83,7 @@ class HyperNN(nn.Module):
                 self.add_tensors[tensor.size()] = torch.Tensor(tensor.size())
             if 'weight' in name:
                 nn.init.kaiming_normal_(tensor)
-            else:
+            elif 'z_v' not in name:
                 tensor.data.zero_()
 
         self._update_pnn()

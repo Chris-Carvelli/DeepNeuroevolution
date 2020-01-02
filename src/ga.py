@@ -1,5 +1,5 @@
 import pandas as pd
-import csv
+import torch
 import os
 import gc
 import gym
@@ -7,8 +7,6 @@ import copy
 import random
 import time
 import pathos.multiprocessing as mp
-import dill
-# mp.set_start_method('forkserver', force=True)
 
 import numpy as np
 
@@ -36,7 +34,7 @@ class GA:
                  elite_trials=0,
                  n_elites=1,
                  save_folder='results',
-                 run_name='run'):
+                 run_name='hnn'):
 
         # hyperparams
         self.population = population
@@ -54,6 +52,8 @@ class GA:
         self.n_elites = n_elites
         self.save_folder = save_folder
         self.run_name = run_name
+        self.log_dir_path = f'./{self.save_folder}/{self.run_name}'
+        os.makedirs(os.path.dirname(self.log_dir_path), exist_ok=True)
 
         # population
         self.scored_parents = None
@@ -80,7 +80,7 @@ class GA:
         """
         if self.termination_strategy():
             if self.models is None:
-                self._log(f'{"Res" if self.g > 0 else "S"}tarting run')
+                self._log(f'{"Res" if self.g > 0 else "S"}tarting {self.run_name}')
                 self.models = self._init_models()
                 self._log(f'Models init')
 
@@ -244,7 +244,7 @@ class GA:
     def _log(self, s):
         t = time.localtime()
         t_str = time.strftime("%a, %d %b %Y %H:%M:%S", t)
-        with open('ga.log', 'a+') as f:
+        with open(f'{self.log_dir_path}/ga.log', 'a+') as f:
             f.write(f'[{t_str}] {s}\n')
 
         print(s)
@@ -252,15 +252,11 @@ class GA:
     def _save_checkpoint(self, hist):
         self.hist = self.hist.append(hist, ignore_index=True)
 
-        log_dir_path = f'{self.save_folder}/{self.run_name}'
-        os.makedirs(os.path.dirname(log_dir_path), exist_ok=True)
-
-        self.hist.to_csv(f'{log_dir_path}/res.csv')
+        self.hist.to_csv(f'{self.log_dir_path}/res.csv')
 
         if self.scored_parents[0][1] > self.max_score_ever:
             self.max_score_ever = self.scored_parents[0][1]
-            with open(f'{log_dir_path}/best.p', 'wb+') as fp:
-                dill.dump(self.scored_parents[0], fp)
+            torch.save(self.scored_parents[0][0].state_dict(), f'{self.log_dir_path}/best.p')
 
     # serialization
     def __getstate__(self):

@@ -1,27 +1,37 @@
+import os
 import torch
 
 from src.ga import GA
-from examples.racing.models.PolicyNN import PolicyNN
+from examples.racing.models.cnn.CNN import CNN
 from examples.racing.models.HyperNN import HyperNN
 
 torch.set_num_threads(1)
 
+print(os.getcwd())
 
-def main():
+runs = {
+    'hcnn': lambda obs_space, action_space: HyperNN(obs_space, action_space, CNN, 512),
+    # 'hnn-32': lambda obs_space, action_space: HyperNN(obs_space, action_space, PolicyNN, 512),
+    # 'hnn-128': lambda obs_space, action_space: HyperNN(obs_space, action_space, PolicyNN, 128),
+}
+
+
+def main(run):
     max_evals = 60000000000
     ga_pol = GA(
-            env_key='CarRacing-v0',
-            population=200,
-            model_builder=lambda obs_space, action_space: HyperNN(obs_space, action_space, PolicyNN, 1024),
-            max_evals=max_evals,
-            max_generations=1000,
-            sigma=0.01,
-            min_sigma=0.01,
-            truncation=3,
-            trials=1,
-            elite_trials=20,
-            n_elites=1
-            )
+        env_key='CarRacing-v0',
+        population=200,
+        model_builder=runs[run],
+        max_evals=max_evals,
+        max_generations=1000,
+        sigma=0.01,
+        min_sigma=0.01,
+        truncation=3,
+        trials=1,
+        elite_trials=20,
+        n_elites=1,
+        run_name=run
+    )
 
     res = True
     while res is not False:
@@ -29,4 +39,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    for run in runs:
+        main(run)
