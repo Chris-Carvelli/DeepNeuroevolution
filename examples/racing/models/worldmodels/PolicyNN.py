@@ -12,7 +12,7 @@ import torch.nn as nn
 from torchvision import transforms
 from torch.autograd import Variable
 
-from examples.racing.models import MDRNNCell, VAE, Controller
+from examples.racing.models.worldmodels import MDRNNCell, VAE, Controller
 
 # Hardcoded for now. Note: Size of latent vector (LSIZE) is increased to 128 for DISCRETE representation
 ASIZE, LSIZE, RSIZE, RED_SIZE, SIZE = 3, 32, 256, 64, 64
