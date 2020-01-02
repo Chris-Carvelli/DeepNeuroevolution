@@ -1,4 +1,5 @@
 import time
+import gc
 
 import gym
 import torch

@@ -30,6 +30,7 @@ def main(run):
         trials=1,
         elite_trials=20,
         n_elites=1,
+        save_folder='results/racing',
         run_name=run
     )
 
