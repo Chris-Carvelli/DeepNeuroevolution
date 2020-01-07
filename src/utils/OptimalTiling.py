@@ -1,50 +1,56 @@
 from functools import reduce
 import pandas as pd
+import matplotlib.pyplot as plt
 import gym
 
-from examples.racing.models.cnn.CNN import CNN
-from examples.racing.models.HyperNN import HyperNN
+from examples.atari.Controller import PolicyNN
+from examples.atari.HyperNN import HyperNN
 
-env = gym.make('CarRacing-v0')
+env = gym.make('FrostbiteDeterministic-v4')
 df = pd.DataFrame()
 
 
 def count_params(nn):
-    ret0 = ret1 = 0
+    ret = 0
     for param in nn.parameters():
         print(param.shape)
-        ret0 += reduce(lambda x, y: x * y, param.shape, 1)
-    print(ret0)
+        ret += reduce(lambda x, y: x * y, param.shape, 1)
+    print(ret)
+
+    return ret
+
+
+def count_buffers(nn):
+    ret = 0
     for buffer in nn.buffers():
         print(buffer.shape)
-        ret1 += reduce(lambda x, y: x * y, buffer.shape, 1)
-    print(ret1)
-    return ret0,  ret1
+        ret += reduce(lambda x, y: x * y, buffer.shape, 1)
+    print(ret)
+    return ret
 
 
-pnn = CNN(env.observation_space, env.action_space)
-p, z = count_params(pnn)
+pnn = PolicyNN(env.observation_space, env.action_space)
 df = df.append(
     {
         'model': 'pnn',
-        'z_size': z,
-        'params_size': p
+        'z_size': 0,
+        'params_size': count_params(pnn)
     },
     ignore_index=True
 )
 
-for i in range(5, 15):
-    hnn = HyperNN(env.observation_space, env.action_space, CNN, 2**i)
-    p, z = count_params(hnn)
+for i in range(3, 15):
+    hnn = HyperNN(env.observation_space, env.action_space, PolicyNN, 2**i)
     df = df.append(
         {
             'model': f'hnn{2**i}',
-            'z_size': z,
-            'params_size': p
+            'z_size': count_buffers(hnn),
+            'params_size': count_params(hnn.hnn)
         },
         ignore_index=True
     )
 
 print(df)
-df[['model', 'z_size', 'params_size']].plot(kind='bar', stacked=True)
+ax = df[['model', 'z_size', 'params_size']].plot(kind='bar', stacked=True)
+plt.show()
 df.to_csv('param_size.csv')
