@@ -10,6 +10,8 @@ import pathos.multiprocessing as mp
 
 import numpy as np
 
+torch.set_num_threads(1)
+
 
 class GA:
     """
@@ -53,7 +55,7 @@ class GA:
         self.save_folder = save_folder
         self.run_name = run_name
         self.log_dir_path = f'./{self.save_folder}/{self.run_name}'
-        os.makedirs(os.path.dirname(self.log_dir_path), exist_ok=True)
+        os.makedirs(os.path.dirname(f'{self.log_dir_path}/'), exist_ok=True)
 
         # population
         self.scored_parents = None
@@ -114,6 +116,7 @@ class GA:
         self.scored_parents = scored_candidate_elites
 
         return {
+            'env': self.env_key,
             'median': median_score,
             'mean': mean_score,
             'max': max_score,
