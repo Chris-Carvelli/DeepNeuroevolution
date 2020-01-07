@@ -23,13 +23,13 @@ transform = transforms.Compose([
 ])
 
 
-class CNN(nn.Module):
+class PolicyNN(nn.Module):
     def __init__(self, obs_space, action_space):
         n = obs_space.shape[0]
         m = obs_space.shape[1]
         self.image_embedding_size = ((n - 1) // 2 - 2) * ((m - 1) // 2 - 2) * 64
 
-        super(CNN, self).__init__()
+        super(PolicyNN, self).__init__()
         self.vision = nn.Sequential(
             nn.Conv2d(3, 32, 4, stride=2),
             nn.ReLU(),

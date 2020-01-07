@@ -34,7 +34,7 @@ class PolicyNN(nn.Module):
         super(PolicyNN, self).__init__()
         # self.vision = nn.Sequential(
         #     nn.Conv2(3, 32, 4, stride=2),
-        #     nn.ReLU(),
+        #     nn.ReLU(),pl
         #     nn.Conv2d(32, 64, 4, stride=2),
         #     nn.ReLU(),
         #     nn.Conv2d(64, 128, 4, stride=2),
@@ -129,7 +129,7 @@ class PolicyNN(nn.Module):
                 state, reward, is_done, _ = env.step(action)
                 # Count how many times the car did not get a reward (e.g. was outside track)
                 neg_count = neg_count + 1 if reward < 0.0 else 0
-                # To speed up training, determinte evaluations that are outside of track too many times
+                # To speed up training, determinate evaluations that are outside of track too many times
                 if neg_count > 20 and early_termination:
                     is_done = True
 
