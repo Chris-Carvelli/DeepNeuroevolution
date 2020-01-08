@@ -9,9 +9,23 @@ SOLVED = {
     'FrostbiteDeterministic-v4': None,
     'CarRacing-v0': 900,
 }
+
+runs = [
+    'cnn',
+    'cnn_compressed',
+    'hcnn',
+    'ga-world-models',
+    'ga-world-models_original',
+    'hnn-world-models',
+    'ann',
+    'ann_compression',
+    'hnn'
+]
+
 X_MAX = 1000
-folders = ['walker', 'lander', 'atari', 'racing']
-style = 'dark_background'
+folders = ['atari']
+# style = 'dark_background'
+style = None
 
 
 if style is not None:
@@ -20,11 +34,12 @@ if style is not None:
 
 def plot(y, env=None):
     fig = plt.figure()
-    sns.lineplot('epoch', y, 'model')
+    sns.lineplot('epoch', y, 'model', data=data[gen_filter & model_filter])
     fig.patch.set_facecolor('None')
     fig.patch.set_alpha(0)
     plt.title(env)
     plt.savefig(f'plots/{env}_{y}.png')
+    plt.show()
 
 
 def plot_grid(y):
@@ -39,16 +54,6 @@ def plot_grid(y):
     plt.savefig(f'{y}.png')
     plt.show()
 
-
-runs = [
-    'cnn',
-    'hcnn',
-    'ga-world-models',
-    'ga-world-models_original',
-    'hnn-world-models',
-    'ann',
-    'hnn'
-]
 
 data = pd.DataFrame()
 for folder in folders:

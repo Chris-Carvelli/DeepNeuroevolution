@@ -3,10 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import gym
 
-from examples.atari.Controller import PolicyNN
-from examples.atari.HyperNN import HyperNN
+from examples.racing_compression.models.cnn.CNN import PolicyNN
+from examples.racing.models.cnn.CNN import PolicyNN as MainNN
+from examples.racing_compression.models.HyperNN import HyperNN
 
-env = gym.make('FrostbiteDeterministic-v4')
+env = gym.make('CarRacing-v0')
 df = pd.DataFrame()
 
 
@@ -39,8 +40,8 @@ df = df.append(
     ignore_index=True
 )
 
-for i in range(3, 15):
-    hnn = HyperNN(env.observation_space, env.action_space, PolicyNN, 2**i)
+for i in range(9, 10):
+    hnn = HyperNN(env.observation_space, env.action_space, MainNN, 2**i)
     df = df.append(
         {
             'model': f'hnn{2**i}',
@@ -50,7 +51,9 @@ for i in range(3, 15):
         ignore_index=True
     )
 
+df['tot'] = df['z_size'] + df['params_size']
 print(df)
 ax = df[['model', 'z_size', 'params_size']].plot(kind='bar', stacked=True)
-plt.show()
+# plt.show()
+plt.savefig('param_size.png')
 df.to_csv('param_size.csv')
