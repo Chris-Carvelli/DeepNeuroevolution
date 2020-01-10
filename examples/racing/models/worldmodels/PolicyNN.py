@@ -15,7 +15,12 @@ from torch.autograd import Variable
 from examples.racing.models.worldmodels import MDRNNCell, VAE, Controller
 
 # Hardcoded for now. Note: Size of latent vector (LSIZE) is increased to 128 for DISCRETE representation
-ASIZE, LSIZE, RSIZE, RED_SIZE, SIZE = 3, 32, 256, 64, 64
+
+# Hparams shrink
+LSIZE, RSIZE, VAE_HIDDEN = 32, 256, 1024
+# Static hparams
+ASIZE, RED_SIZE, SIZE = 3, 64, 64
+
 models = ['vae', 'mdrnn', 'controller']
 
 transform = transforms.Compose([
@@ -26,7 +31,11 @@ transform = transforms.Compose([
 
 
 class PolicyNN(nn.Module):
-    def __init__(self, obs_space, action_space):
+    def __init__(self, obs_space, action_space, shrink=1):
+        self.lsize = int(LSIZE * shrink)
+        self.rsize = int(RSIZE * shrink)
+        self.vae_hidden = int(VAE_HIDDEN * shrink)
+
         n = obs_space.shape[0]
         m = obs_space.shape[1]
         self.image_embedding_size = ((n - 1) // 2 - 2) * ((m - 1) // 2 - 2) * 64
@@ -48,9 +57,9 @@ class PolicyNN(nn.Module):
         #     nn.Linear(1024, action_space.shape[0])
         # )
 
-        self.vae = VAE(3, LSIZE, 1024)
-        self.mdrnn = MDRNNCell(LSIZE, ASIZE, RSIZE, 5)
-        self.controller = Controller(LSIZE, RSIZE, ASIZE)
+        self.vae = VAE(3, self.lsize, self.vae_hidden, shrink)
+        self.mdrnn = MDRNNCell(self.lsize, ASIZE, self.rsize, 5)
+        self.controller = Controller(self.lsize, self.rsize, ASIZE)
 
         self.add_tensors = {}
         self.init()
@@ -116,7 +125,7 @@ class PolicyNN(nn.Module):
             max_eval = max_eval or -1
 
             hidden = [
-                torch.zeros(1, RSIZE)  # .to(self.device)
+                torch.zeros(1, self.rsize)  # .to(self.device)
                 for _ in range(2)]
 
             while not is_done:

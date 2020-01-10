@@ -11,12 +11,12 @@ def random_z_v(z_dim, z_num):
 
 
 class HyperNN(nn.Module):
-    def __init__(self, obs_space, action_space, pnn, tiling=64):
+    def __init__(self, obs_space, action_space, pnn, tiling=64, shrink=1):
         super().__init__()
 
         self._tiling = tiling
 
-        self.z_dim = 32
+        self.z_dim = int(32 * shrink)
         self.z_v_evolve_prob = 0.5
 
         self.pnn = pnn(obs_space, action_space)
@@ -25,12 +25,13 @@ class HyperNN(nn.Module):
         self.out_features = self._get_out_features()
         self.z_num, self.z_indexer = self._get_z_num()
 
+        in_size = int(128 * shrink)
         self.hnn = nn.Sequential(
-            nn.Linear(self.z_dim, 128),
+            nn.Linear(self.z_dim, in_size),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(in_size, in_size),
             nn.ReLU(),
-            nn.Linear(128, self.out_features),
+            nn.Linear(in_size, self.out_features),
         )
 
         self.register_buffer('z_v', random_z_v(self.z_dim, self.z_num))

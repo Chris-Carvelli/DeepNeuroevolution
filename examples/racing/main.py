@@ -2,7 +2,7 @@ import os
 import torch
 
 from src.ga import GA
-from examples.racing.models.cnn.CNN import PolicyNN
+from examples.racing.models.worldmodels.PolicyNN import PolicyNN
 from examples.racing.models.HyperNN import HyperNN
 
 torch.set_num_threads(1)
@@ -10,8 +10,8 @@ torch.set_num_threads(1)
 print(os.getcwd())
 
 runs = {
-    'hcnn': lambda obs_space, action_space: HyperNN(obs_space, action_space, PolicyNN, 512),
-    # 'hnn-32': lambda obs_space, action_space: HyperNN(obs_space, action_space, PolicyNN, 512),
+    # 'ann_0.125': lambda obs_space, action_space: PolicyNN(obs_space, action_space, shrink=0.125),
+    'hnn_0.125': lambda obs_space, action_space: HyperNN(obs_space, action_space, PolicyNN, 1024, 0.125),
     # 'hnn-128': lambda obs_space, action_space: HyperNN(obs_space, action_space, PolicyNN, 128),
 }
 

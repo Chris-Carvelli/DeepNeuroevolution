@@ -6,6 +6,8 @@ class Controller(nn.Module):
     """ Controller """
     def __init__(self, latents, recurrents, actions):
         super().__init__()
+        self.latents = latents
+        self.recurrents = recurrents
         self.fc = nn.Linear(latents + recurrents, actions)
 
     def forward(self, *inputs):

@@ -10,16 +10,16 @@ import torch.nn.functional as F
 
 class Decoder(nn.Module):
     """ VAE decoder """
-    def __init__(self, img_channels, latent_size, m):
+    def __init__(self, img_channels, latent_size, m, shrink=1):
         super(Decoder, self).__init__()
         self.latent_size = latent_size
         self.img_channels = img_channels
 
         self.fc1 = nn.Linear(latent_size, m)
-        self.deconv1 = nn.ConvTranspose2d(m, 128, 5, stride=2)
-        self.deconv2 = nn.ConvTranspose2d(128, 64, 5, stride=2)
-        self.deconv3 = nn.ConvTranspose2d(64, 32, 6, stride=2)
-        self.deconv4 = nn.ConvTranspose2d(32, img_channels, 6, stride=2)
+        self.deconv1 = nn.ConvTranspose2d(m, int(128 * shrink), 5, stride=2)
+        self.deconv2 = nn.ConvTranspose2d(int(128 * shrink), int(64 * shrink), 5, stride=2)
+        self.deconv3 = nn.ConvTranspose2d(int(64 * shrink), int(32 * shrink), 6, stride=2)
+        self.deconv4 = nn.ConvTranspose2d(int(32 * shrink), img_channels, 6, stride=2)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
@@ -33,15 +33,15 @@ class Decoder(nn.Module):
 
 class Encoder(nn.Module):
     """ VAE encoder """
-    def __init__(self, img_channels, latent_size, m):
+    def __init__(self, img_channels, latent_size, m, shrink=1):
         super(Encoder, self).__init__()
         self.latent_size = latent_size
         self.img_channels = img_channels
 
-        self.conv1 = nn.Conv2d(img_channels, 32, 4, stride=2)
-        self.conv2 = nn.Conv2d(32, 64, 4, stride=2)
-        self.conv3 = nn.Conv2d(64, 128, 4, stride=2)
-        self.conv4 = nn.Conv2d(128, 256, 4, stride=2)
+        self.conv1 = nn.Conv2d(img_channels, int(32 * shrink), 4, stride=2)
+        self.conv2 = nn.Conv2d(int(32 * shrink), int(64 * shrink), 4, stride=2)
+        self.conv3 = nn.Conv2d(int(64 * shrink), int(128 * shrink), 4, stride=2)
+        self.conv4 = nn.Conv2d(int(128 * shrink), int(256 * shrink), 4, stride=2)
 
         self.fc_mu = nn.Linear(m, latent_size)
         self.fc_logsigma = nn.Linear(m, latent_size)
@@ -61,10 +61,10 @@ class Encoder(nn.Module):
 
 class VAE(nn.Module):
     """ Variational Autoencoder """
-    def __init__(self, img_channels, latent_size, m):
+    def __init__(self, img_channels, latent_size, m, shrink=1):
         super(VAE, self).__init__()
-        self.encoder = Encoder(img_channels, latent_size, m)
-        self.decoder = Decoder(img_channels, latent_size, m)
+        self.encoder = Encoder(img_channels, latent_size, m, shrink)
+        self.decoder = Decoder(img_channels, latent_size, m, shrink)
 
     def forward(self, x):
         mu, logsigma = self.encoder(x)

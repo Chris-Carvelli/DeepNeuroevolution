@@ -6,13 +6,17 @@ from examples.atari.Controller import PolicyNN
 from examples.atari.HyperNN import HyperNN
 
 runs = {
-    # 'ann': lambda obs_space, action_space: PolicyNN(obs_space, action_space),
     'hnn': lambda obs_space, action_space: HyperNN(obs_space, action_space, PolicyNN, 512),
+    'ann_0.625': lambda obs_space, action_space: PolicyNN(obs_space, action_space, 0.125),
+    'ann_0.125': lambda obs_space, action_space: PolicyNN(obs_space, action_space, 0.125),
+    'ann_0.25': lambda obs_space, action_space: PolicyNN(obs_space, action_space, 0.25),
+    'ann_0.5': lambda obs_space, action_space: PolicyNN(obs_space, action_space, 0.5),
+    'ann': lambda obs_space, action_space: PolicyNN(obs_space, action_space),
 }
 
 
 def main(run):
-    env = 'FrostbiteDeterministic-v4'
+    env = 'SkiingDeterministic-v4'
     max_evals = 60000000000
     ga = GA(
         env_key=env,
@@ -26,7 +30,7 @@ def main(run):
         trials=1,
         elite_trials=20,
         n_elites=1,
-        save_folder='results/atari',
+        save_folder='results/skiing',
         run_name=run
     )
 
@@ -38,3 +42,4 @@ def main(run):
 if __name__ == "__main__":
     for run in runs:
         main(run)
+

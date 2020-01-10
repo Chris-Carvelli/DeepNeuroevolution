@@ -8,8 +8,11 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
+HIDDEN_SIZES = [400, 300]
+
+
 class PolicyNN(nn.Module):
-    def __init__(self, obs_space, action_space):
+    def __init__(self, obs_space, action_space, hidden_sizes=None):
         super(PolicyNN, self).__init__()
 
         print(action_space.shape)
@@ -26,9 +29,11 @@ class PolicyNN(nn.Module):
         #     nn.Tanh(),
         # )
 
-        self.l1 = nn.Linear(self.state_dim, 400)
-        self.l2 = nn.Linear(400, 300)
-        self.l3 = nn.Linear(300, self.action_dim)
+        if hidden_sizes is None:
+            hidden_sizes = HIDDEN_SIZES
+        self.l1 = nn.Linear(self.state_dim, hidden_sizes[0])
+        self.l2 = nn.Linear(hidden_sizes[0], hidden_sizes[1])
+        self.l3 = nn.Linear(hidden_sizes[1], self.action_dim)
 
         self.add_tensors = {}
         self.init()

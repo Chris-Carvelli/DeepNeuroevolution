@@ -20,25 +20,25 @@ transform = transforms.Compose([
 
 
 class PolicyNN(nn.Module):
-    def __init__(self, obs_space, action_space):
+    def __init__(self, obs_space, action_space, shrink=1):
         super(PolicyNN, self).__init__()
 
         self.state_dim = obs_space.shape[0]
         self.action_dim = action_space.n
 
         self.vision = nn.Sequential(
-            nn.Conv2d(4, 32, (8, 8), 4),
+            nn.Conv2d(4, int(32 * shrink), (8, 8), 4),
             nn.ReLU(),
-            nn.Conv2d(32, 64, (4, 4), 2),
+            nn.Conv2d(int(32 * shrink), int(64 * shrink), (4, 4), 2),
             nn.ReLU(),
-            nn.Conv2d(64, 64, (3, 3), 1),
+            nn.Conv2d(int(64 * shrink), int(64 * shrink), (3, 3), 1),
             nn.ReLU()
         )
 
         self.controller = nn.Sequential(
-            nn.Linear(4 * 4 * 64, 512),
+            nn.Linear(4 * 4 * int(64 * shrink), int(512 * shrink)),
             nn.ReLU(),
-            nn.Linear(512, 18),
+            nn.Linear(int(512 * shrink), 18),
             nn.Softmax()
         )
 
