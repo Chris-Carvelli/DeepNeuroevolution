@@ -7,13 +7,16 @@ import copy
 import random
 import time
 import pathos.multiprocessing as mp
+import dill
 
 import numpy as np
+import sys
 
 torch.set_num_threads(1)
 
 
 class GA:
+
     """
     Basic GA implementation.
 
@@ -35,6 +38,7 @@ class GA:
                  trials=1,
                  elite_trials=0,
                  n_elites=1,
+                 reproduce_policy='top',
                  save_folder='results',
                  run_name='hnn'):
 
@@ -53,6 +57,9 @@ class GA:
         self.elite_trials = elite_trials
         self.n_elites = n_elites
         self.save_folder = save_folder
+        self.reproduce_policy = reproduce_policy
+        self._reproduce = reproduce_policies[reproduce_policy]
+
         self.run_name = run_name
         self.log_dir_path = f'./{self.save_folder}/{self.run_name}'
         os.makedirs(os.path.dirname(f'{self.log_dir_path}/'), exist_ok=True)
@@ -67,7 +74,7 @@ class GA:
         # algorithm state
         self.g = 0
         self.evaluations_used = 0
-        self.max_score_ever = -1
+        self.max_score_ever = -sys.float_info.max
 
         cores = mp.cpu_count()
         self.pool = mp.Pool(cores)
@@ -87,9 +94,9 @@ class GA:
                 self._log(f'Models init')
 
             ret = self._evolve_iter()
+            self.g += 1
             self._save_checkpoint(ret)
             self._log(f"Gen {self.g}: elite_average: {ret['elite_avg']}")
-            self.g += 1
 
             return ret
         else:
@@ -110,7 +117,7 @@ class GA:
         else:
             scored_candidate_elites = scored_models[:self.truncation]
 
-        self._reproduce(scored_models, scored_candidate_elites)
+        self._reproduce(self, scored_models, scored_candidate_elites)
         print('population reproduced')
 
         self.scored_parents = scored_candidate_elites
@@ -143,20 +150,20 @@ class GA:
     # reproduction
     ###############
 
-    # # top n
-    # def _reproduce(self, scored_parents):
-    #     # Elitism
-    #     self.models = [p for p, _ in scored_parents[:self.n_elites]]
-    #     sigma = max(self.min_sigma, self.sigma * pow(self.sigma_decay, self.g))
-    #
-    #     for individual in range(self.population - self.n_elites):
-    #         random_choice = random.choice(scored_parents)
-    #         cpy = copy.deepcopy(random_choice)[0]
-    #         self.models.append(cpy)
-    #         self.models[-1].evolve(sigma)
+    # top n
+    def _reproduce_top(self, scored_parents, scored_candidate_elites):
+        # Elitism
+        self.models = [p for p, _ in scored_parents[:self.n_elites]]
+        sigma = max(self.min_sigma, self.sigma * pow(self.sigma_decay, self.g))
+
+        for individual in range(self.population - self.n_elites):
+            random_choice = random.choice(scored_parents)
+            cpy = copy.deepcopy(random_choice)[0]
+            self.models.append(cpy)
+            self.models[-1].evolve(sigma)
 
     # 2 way
-    def _reproduce(self, scored_models, scored_candidate_elites):
+    def _reproduce_2way(self, scored_models, scored_candidate_elites):
         new_pop = []
         truncation_size = int(len(scored_models)/2)
         sigma = max(self.min_sigma, self.sigma * pow(self.sigma_decay, self.g))
@@ -188,11 +195,14 @@ class GA:
 
     def _init_models(self):
         self._log('Init models')
+        self.pool = mp.Pool(mp.cpu_count())
         if not self.scored_parents:
             env = gym.make(self.env_key)
-            return [self.model_builder(env.observation_space, env.action_space) for _ in range(self.population)]
+            ret = [self.model_builder(env.observation_space, env.action_space) for _ in range(self.population)]
+            env.close()
+            return ret
         else:
-            self._reproduce(self.scored_parents)
+            self._reproduce(self, self.scored_parents, None)
             return self.models
 
     # # serial mode
@@ -257,6 +267,9 @@ class GA:
 
         self.hist.to_csv(f'{self.log_dir_path}/res.csv')
 
+        with open(f'{self.log_dir_path}/checkpoint.pkl', 'wb+') as fp:
+            dill.dump(self, fp)
+
         if self.scored_parents[0][1] > self.max_score_ever:
             self.max_score_ever = self.scored_parents[0][1]
             torch.save(self.scored_parents[0][0].state_dict(), f'{self.log_dir_path}/best.p')
@@ -275,3 +288,8 @@ class GA:
 
         self.models = None
 
+
+reproduce_policies = {
+    'top': GA._reproduce_top,
+    '2way': GA._reproduce_2way,
+}
