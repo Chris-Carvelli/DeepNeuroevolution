@@ -68,6 +68,12 @@ class PolicyNN(nn.Module):
 
     def init(self):
         for name, tensor in self.named_parameters():
+            if 'bias' in name:
+                nn.init.zeros_(tensor)
+            else:
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(tensor)
+                # DNE paper says Xavier, but torch implements it differently
+                nn.init.normal_(tensor, 0, 1 / fan_in)
             if tensor.size() not in self.add_tensors:
                 self.add_tensors[tensor.size()] = torch.Tensor(tensor.size())
 
@@ -104,7 +110,7 @@ class PolicyNN(nn.Module):
                 values = self(cur_states.unsqueeze(0))
                 action = np.argmax(values[:env.action_space.n])
 
-                state, reward, done, _ = env.step(action)
+                state, reward, is_done, _ = env.step(action)
                 state = transform(state)
                 cur_states = cur_states[1:]
                 cur_states = torch.cat((cur_states, state))

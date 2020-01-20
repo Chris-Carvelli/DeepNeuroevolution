@@ -1,37 +1,54 @@
 import os
 import torch
+import click
 
 from src.ga import GA
 from examples.atari.Controller import PolicyNN
 from examples.atari.HyperNN import HyperNN
 
+# envs = [
+#     'Amidar',
+#     'Assault',
+#     'Asterix'
+#     'Atlantis',
+#     'Enduro',
+#     'Gravitar',
+#     'Kangaroo',
+#     'Seaquest',
+#     'Zaxxon'
+# ]
+
 runs = {
-    'hnn': lambda obs_space, action_space: HyperNN(obs_space, action_space, PolicyNN, 512),
-    'ann_0.625': lambda obs_space, action_space: PolicyNN(obs_space, action_space, 0.125),
-    'ann_0.125': lambda obs_space, action_space: PolicyNN(obs_space, action_space, 0.125),
-    'ann_0.25': lambda obs_space, action_space: PolicyNN(obs_space, action_space, 0.25),
-    'ann_0.5': lambda obs_space, action_space: PolicyNN(obs_space, action_space, 0.5),
     'ann': lambda obs_space, action_space: PolicyNN(obs_space, action_space),
+    'hnn': lambda obs_space, action_space: HyperNN(obs_space, action_space, PolicyNN, 512),
+    'ann_0.5': lambda obs_space, action_space: PolicyNN(obs_space, action_space, 0.5),
+    'ann_0.25': lambda obs_space, action_space: PolicyNN(obs_space, action_space, 0.25),
+    'ann_0.125': lambda obs_space, action_space: PolicyNN(obs_space, action_space, 0.125),
 }
 
 
-def main(run):
-    env = 'SkiingDeterministic-v4'
-    max_evals = 60000000000
+@click.command()
+@click.argument('run')
+@click.argument('env')
+def main(run, env):
+    max_evals = 1e9
+
     ga = GA(
-        env_key=env,
+        env_key=f'{env}Deterministic-v4',
         population=1000,
         model_builder=runs[run],
         max_evals=max_evals,
-        max_generations=1000,
+        max_episode_eval=5000,
+        max_generations=200000,
         sigma=0.002,
         min_sigma=0.002,
-        truncation=3,
+        truncation=20,
         trials=1,
-        elite_trials=20,
+        elite_trials=5,
         n_elites=1,
-        save_folder='results/skiing',
-        run_name=run
+        save_folder=f'results/{env}',
+        run_name=run,
+        reproduce_policy='2way'
     )
 
     res = True
@@ -40,6 +57,5 @@ def main(run):
 
 
 if __name__ == "__main__":
-    for run in runs:
-        main(run)
+    main()
 

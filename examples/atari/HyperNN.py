@@ -11,12 +11,12 @@ def random_z_v(z_dim, z_num):
 
 
 class HyperNN(nn.Module):
-    def __init__(self, obs_space, action_space, pnn, tiling=64):
+    def __init__(self, obs_space, action_space, pnn, tiling=64, shrink=1):
         super().__init__()
 
         self._tiling = tiling
 
-        self.z_dim = 32
+        self.z_dim = int(32 * shrink)
         self.z_v_evolve_prob = 0.5
 
         self.pnn = pnn(obs_space, action_space)
@@ -74,8 +74,8 @@ class HyperNN(nn.Module):
                     tensor.data.add_(to_add)
             self._update_pnn()
 
-    def evaluate(self, env, max_eval, render=False, fps=60):
-        return self.pnn.evaluate(env, max_eval, render, fps)
+    def evaluate(self, env_key, max_eval, render=False, fps=60, early_termination=True):
+        return self.pnn.evaluate(env_key, max_eval, render, fps, early_termination)
 
     def _init_nn(self):
         for name, tensor in self.named_parameters():
